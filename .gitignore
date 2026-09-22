@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# YOLO
+runs/
+*.pt
+
+# Angular
+node_modules/
+dist/
+
+# VS Code
+.vscode/
+
+# Banco
+*.db
+
+# Sistema
+.DS_Store
+Thumbs.db
