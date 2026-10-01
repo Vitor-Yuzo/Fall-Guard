@@ -1,5 +1,6 @@
 import cv2
 import time
+import requests
 from collections import deque
 from ultralytics import YOLO
 
@@ -12,6 +13,8 @@ MODEL_PATH = "runs/detect/runs/fallguard_v1-6/weights/best.pt"
 
 CONFIDENCE = 0.5
 CAMERA_INDEX = 0
+
+API_URL = "http://127.0.0.1:5000/api/falls"
 
 HISTORY_SIZE = 30
 FALL_WINDOW_SECONDS = 5.0
@@ -80,6 +83,28 @@ def detect_fall():
 
     return False
 
+# ===================================
+# Enviar a detecção de queda para API
+# ===================================
+
+def send_fall_to_api(confidence):
+    data = {
+        "evento": "queda",
+        "classe": "lie",
+        "confianca": confidence,
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+    try:
+        response = requests.post(API_URL, json=data, timeout=3)
+
+        if response.status_code == 201:
+            print("✅ Queda enviada para a API.")
+        else:
+            print(f"⚠️ API retornou status {response.status_code}")
+
+    except requests.exceptions.RequestException as error:
+        print(f"❌ Erro ao conectar com a API: {error}")
 
 # =========================
 # WEBCAM
@@ -127,7 +152,9 @@ while True:
     # =========================
     # ANALISA DETECÇÕES
     # =========================
-
+    
+    detected_confidence = None
+    
     for result in results:
 
         boxes = result.boxes
@@ -138,6 +165,7 @@ while True:
         for box in boxes:
 
             confidence = float(box.conf[0])
+            detected_confidence = confidence
             class_id = int(box.cls[0])
             class_name = model.names[class_id]
 
@@ -206,15 +234,13 @@ while True:
         ):
 
             if detect_fall():
-
                 fall_detected = True
-
                 last_fall_time = current_time
 
-                print(
-                    "🚨 QUEDA DETECTADA!"
-                )
+                print("🚨 QUEDA DETECTADA!")
 
+                if detected_confidence is not None:
+                    send_fall_to_api(detected_confidence)
 
     # =========================
     # INTERFACE
