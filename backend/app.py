@@ -1,9 +1,10 @@
-
 from flask import Flask, jsonify, request
 import mysql.connector
 from config import DB_CONFIG
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 
 def get_db_connection():
@@ -71,6 +72,46 @@ def register_fall():
         if conexao is not None and conexao.is_connected():
             conexao.close()
 
+@app.route("/api/falls", methods=["GET"])
+def list_falls():
+    conexao = None
+    cursor = None
+
+    try:
+        conexao = get_db_connection()
+        cursor = conexao.cursor(dictionary=True)
+
+        cursor.execute("""
+            SELECT id, evento, classe, confianca, timestamp_evento
+            FROM falls
+            ORDER BY timestamp_evento DESC
+        """)
+
+        quedas = cursor.fetchall()
+
+        for queda in quedas:
+            if queda["timestamp_evento"] is not None:
+                queda["timestamp_evento"] = queda[
+                    "timestamp_evento"
+                ].strftime("%Y-%m-%d %H:%M:%S")
+
+            if queda["confianca"] is not None:
+                queda["confianca"] = float(queda["confianca"])
+
+        return jsonify(quedas), 200
+
+    except mysql.connector.Error:
+        app.logger.exception("Erro ao consultar quedas no MySQL")
+        return jsonify({
+            "erro": "Não foi possível consultar as quedas"
+        }), 500
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+
+        if conexao is not None and conexao.is_connected():
+            conexao.close()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)

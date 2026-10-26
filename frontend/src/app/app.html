@@ -1,0 +1,172 @@
+<div class="dashboard">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">F</div>
+      <div>
+        <h2>FallGuard</h2>
+        <span>Monitoramento inteligente</span>
+      </div>
+    </div>
+
+    <nav class="navigation">
+      <p class="nav-label">MENU PRINCIPAL</p>
+      <a class="nav-item active" href="#dashboard">▦ <span>Dashboard</span></a>
+      <a class="nav-item" href="#historico">◷ <span>Histórico de quedas</span></a>
+      <a class="nav-item" href="#dispositivos">⌘ <span>Dispositivos</span></a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="system-indicator">
+        <span class="status-dot"></span>
+        <div>
+          <strong>Sistema local</strong>
+          <small>{{ errorMessage ? 'API indisponível' : (loading ? 'Conectando...' : 'Consulta concluída') }}</small>
+        </div>
+      </div>
+      <p class="version">FallGuard · TCC Engenharia</p>
+    </div>
+  </aside>
+
+  <main class="main-content" id="dashboard">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">CENTRAL DE MONITORAMENTO</p>
+        <h1>Dashboard</h1>
+        <p class="subtitle">Acompanhe os eventos e o estado do sistema.</p>
+      </div>
+      <div class="user-badge">
+        <span class="user-avatar">FG</span>
+        <div>
+          <strong>Administrador</strong>
+          <small>Monitoramento local</small>
+        </div>
+      </div>
+    </header>
+
+    <section class="monitor-banner">
+      <div class="monitor-icon">⌁</div>
+      <div class="monitor-text">
+        <span class="banner-label">MONITORAMENTO</span>
+        <h2>{{ loading ? 'Consultando ocorrências...' : (errorMessage ? 'Falha na conexão' : 'Dashboard atualizado') }}</h2>
+        <p>
+          {{ errorMessage || 'Os indicadores abaixo refletem os eventos retornados pela API Flask.' }}
+        </p>
+      </div>
+      <span class="badge" [class.badge-pending]="loading || !!errorMessage">
+        <span></span>
+        {{ loading ? 'Carregando' : (errorMessage ? 'Sem conexão' : 'API consultada') }}
+      </span>
+    </section>
+
+    <section class="section-heading">
+      <div>
+        <h2>Visão geral</h2>
+        <p>Resumo das ocorrências registradas.</p>
+      </div>
+      <span class="period-label">VISÃO GERAL</span>
+    </section>
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Total de quedas</span>
+          <span class="stat-icon danger">!</span>
+        </div>
+        <h3>{{ loading ? '—' : totalFalls }}</h3>
+        <p>Quedas retornadas pela API</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Eventos hoje</span>
+          <span class="stat-icon purple">◷</span>
+        </div>
+        <h3>{{ loading ? '—' : fallsToday }}</h3>
+        <p>Ocorrências do dia atual</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Último evento</span>
+          <span class="stat-icon orange">↗</span>
+        </div>
+        <h3 class="stat-value">
+          {{ loading ? 'Carregando...' : (lastFall ? (lastFall.timestamp_evento | date:'dd/MM HH:mm') : 'Nenhum evento') }}
+        </h3>
+        <p>Data e horário da ocorrência mais recente</p>
+      </article>
+
+      <article class="stat-card">
+        <div class="stat-top">
+          <span>Confiança média</span>
+          <span class="stat-icon green">%</span>
+        </div>
+        <h3>{{ loading ? '—' : (averageConfidence !== null ? (averageConfidence | percent:'1.1-1') : 'N/D') }}</h3>
+        <p>Confiança média das detecções</p>
+      </article>
+    </section>
+
+    <section class="section-heading history-heading" id="historico">
+      <div>
+        <h2>Eventos recentes</h2>
+        <p>Ocorrências retornadas pela API Flask.</p>
+      </div>
+      <button class="refresh-button" (click)="loadFalls()" [disabled]="loading">
+        {{ loading ? 'Atualizando...' : '↻ Atualizar' }}
+      </button>
+    </section>
+
+    <section class="table-card">
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>EVENTO</th>
+              <th>CLASSE</th>
+              <th>CONFIANÇA</th>
+              <th>DATA E HORÁRIO</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody>
+            @if (loading) {
+              <tr>
+                <td colspan="6" class="empty-state">Carregando ocorrências...</td>
+              </tr>
+            } @else if (errorMessage) {
+              <tr>
+                <td colspan="6" class="empty-state">{{ errorMessage }}</td>
+              </tr>
+            } @else if (falls.length === 0) {
+              <tr>
+                <td colspan="6" class="empty-state">Nenhum evento registrado.</td>
+              </tr>
+            } @else {
+              @for (fall of falls; track fall.id) {
+                <tr>
+                  <td>#{{ fall.id }}</td>
+                  <td>{{ fall.evento }}</td>
+                  <td>{{ fall.classe }}</td>
+                  <td>{{ fall.confianca !== null ? (fall.confianca | percent:'1.1-1') : 'N/D' }}</td>
+                  <td>{{ fall.timestamp_evento | date:'dd/MM/yyyy HH:mm' }}</td>
+                  <td>
+                    <span class="event-status">Registrado</span>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+      <footer class="table-footer">
+        <span>FallGuard · Sistema de detecção de quedas</span>
+        <span>{{ falls.length }} registro(s)</span>
+      </footer>
+    </section>
+
+    <footer class="page-footer">
+      FallGuard — Projeto acadêmico de Engenharia de Computação
+    </footer>
+  </main>
+</div>
