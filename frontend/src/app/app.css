@@ -518,25 +518,6 @@ td {
     align-items: flex-start;
   }
 
-  .refresh-button {
-  padding: 9px 13px;
-  border: 1px solid #344156;
-  border-radius: 7px;
-  background: #172131;
-  color: #dbe5f3;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.refresh-button:hover:not(:disabled) {
-  background: #243249;
-}
-
-.refresh-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-
 .event-status {
   display: inline-block;
   padding: 5px 8px;
@@ -551,4 +532,29 @@ td {
   padding: 35px 15px;
   text-align: center;
 }
+}
+
+.refresh-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 13px;
+  border: 1px solid #344156;
+  border-radius: 7px;
+  background: #172131;
+  color: #dbe5f3;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #263449;
+  border-color: #52647d;
+}
+
+.refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
