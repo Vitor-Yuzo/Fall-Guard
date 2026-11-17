@@ -1,80 +1,47 @@
 
 #include <Arduino.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
+#include <MD_MAX72xx.h>
 
-// Wi-Fi
-const char* ssid = "Yuzo";
-const char* password = "12345678";
+#define HARDWARE_TYPE MD_MAX72XX::FC16_HW
+#define MAX_DEVICES 1
 
-// MQTT
-const char* mqtt_server = "10.212.237.57";
-const int mqtt_port = 1883;
+#define DATA_PIN 23
+#define CLK_PIN 18
+#define CS_PIN 5
 
-WiFiClient espClient;
-PubSubClient client(espClient);
-
-void conectarWiFi() {
-    Serial.print("Conectando ao Wi-Fi");
-
-    WiFi.begin(ssid, password);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    Serial.println("\nWi-Fi conectado!");
-    Serial.println(WiFi.localIP());
-}
-
-void conectarMQTT() {
-    while (!client.connected()) {
-        Serial.print("Conectando ao MQTT...");
-
-        if (client.connect("FallGuard_ESP32")) {
-            Serial.println(" conectado!");
-
-            client.subscribe("fallguard/alertas");
-        } else {
-            Serial.print(" falhou. Estado: ");
-            Serial.println(client.state());
-            delay(3000);
-        }
-    }
-}
-
-void receberMensagem(char* topic, byte* payload, unsigned int length) {
-    Serial.print("Mensagem recebida: ");
-
-    for (unsigned int i = 0; i < length; i++) {
-        Serial.print((char)payload[i]);
-    }
-
-    Serial.println();
-}
+MD_MAX72XX matriz(
+    HARDWARE_TYPE,
+    DATA_PIN,
+    CLK_PIN,
+    CS_PIN,
+    MAX_DEVICES
+);
 
 void setup() {
     Serial.begin(115200);
-    conectarWiFi();
 
-    Serial.println("Testando conexao TCP com Mosquitto...");
-
-    WiFiClient teste;
-    if (teste.connect(mqtt_server, mqtt_port)) {
-        Serial.println("TCP CONECTADO!");
-        teste.stop();
-    } else {
-        Serial.println("FALHA NA CONEXAO TCP!");
-    }
-
-    client.setServer(mqtt_server, mqtt_port);
-    client.setCallback(receberMensagem);
+    matriz.begin();
+    matriz.control(MD_MAX72XX::INTENSITY, 3);
+    matriz.clear();
 }
+
 void loop() {
-    if (!client.connected()) {
-        conectarMQTT();
+    matriz.clear();
+
+    byte coracao[8] = {
+        B00000000,
+        B01100110,
+        B11111111,
+        B11111111,
+        B01111110,
+        B00111100,
+        B00011000,
+        B00000000
+    };
+
+    for (int linha = 0; linha < 8; linha++) {
+        matriz.setRow(0, linha, coracao[linha]);
     }
 
-    client.loop();
+    delay(3000);
 }
