@@ -558,3 +558,144 @@ td {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+
+/* CENTRAL DE CONTROLE */
+
+.control-panel {
+  margin-top: 32px;
+}
+
+.control-card {
+  padding: 22px;
+  border: 1px solid #273142;
+  border-radius: 11px;
+  background: #111722;
+}
+
+.control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 22px;
+}
+
+.control-header h3 {
+  margin: 0;
+  color: #f1f5f9;
+  font-size: 14px;
+}
+
+.control-header p {
+  margin: 7px 0 0;
+  color: #8e9aae;
+  font-size: 11px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 17px;
+  border: 1px solid #293548;
+  border-radius: 9px;
+  background: #151e2b;
+}
+
+.service-item span {
+  color: #a8b2c2;
+  font-size: 11px;
+}
+
+.service-item strong {
+  font-size: 12px;
+}
+
+.online {
+  color: #6edbb1;
+}
+
+.offline {
+  color: #ff858e;
+}
+
+.control-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.start-button,
+.stop-button {
+  padding: 11px 18px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.start-button {
+  background: #174b3b;
+  border-color: #286b53;
+  color: #83e3bb;
+}
+
+.start-button:hover:not(:disabled) {
+  background: #20664d;
+}
+
+.stop-button {
+  background: #48242c;
+  border-color: #70333e;
+  color: #ff929b;
+}
+
+.stop-button:hover:not(:disabled) {
+  background: #632d38;
+}
+
+.start-button:disabled,
+.stop-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.system-message {
+  margin: 18px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #344156;
+  border-radius: 7px;
+  background: #172131;
+  color: #cbd5e1;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .control-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .control-actions {
+    flex-direction: column;
+  }
+
+  .start-button,
+  .stop-button {
+    width: 100%;
+  }
+}

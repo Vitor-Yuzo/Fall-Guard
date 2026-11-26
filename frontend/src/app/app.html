@@ -58,6 +58,77 @@
       </span>
     </section>
 
+
+    <section class="control-panel" id="dispositivos">
+      <div class="section-heading">
+        <div>
+          <h2>Central de Controle</h2>
+          <p>Gerencie a inicialização e o monitoramento do FallGuard.</p>
+        </div>
+        <span class="period-label">CONTROLE DO SISTEMA</span>
+      </div>
+
+      <div class="control-card">
+        <div class="control-header">
+          <div>
+            <h3>Estado dos serviços</h3>
+            <p>Acompanhamento das conexões e processos.</p>
+          </div>
+
+          <button class="refresh-button"
+            (click)="loadSystemStatus()"
+            [disabled]="systemLoading">
+            ↻ Atualizar status
+          </button>
+        </div>
+
+        <div class="services-grid">
+          <div class="service-item">
+            <span>Banco de dados MySQL</span>
+            <strong [class.online]="systemStatus?.mysql"
+                    [class.offline]="systemStatus && !systemStatus.mysql">
+              {{ systemStatus ? (systemStatus.mysql ? 'Conectado' : 'Desconectado') : 'Consultando...' }}
+            </strong>
+          </div>
+
+          <div class="service-item">
+            <span>Broker MQTT</span>
+            <strong [class.online]="systemStatus?.mqtt"
+                    [class.offline]="systemStatus && !systemStatus.mqtt">
+              {{ systemStatus ? (systemStatus.mqtt ? 'Conectado' : 'Desconectado') : 'Consultando...' }}
+            </strong>
+          </div>
+
+          <div class="service-item">
+            <span>Câmera e YOLO</span>
+            <strong [class.online]="systemStatus?.camera_yolo"
+                    [class.offline]="systemStatus && !systemStatus.camera_yolo">
+              {{ systemStatus ? (systemStatus.camera_yolo ? 'Executando' : 'Parado') : 'Consultando...' }}
+            </strong>
+          </div>
+        </div>
+
+        <div class="control-actions">
+          <button class="start-button"
+            (click)="startSystem()"
+            [disabled]="systemLoading || systemStatus?.camera_yolo === true">
+            ▶ Iniciar sistema
+          </button>
+
+          <button class="stop-button"
+            (click)="stopSystem()"
+            [disabled]="systemLoading || systemStatus?.camera_yolo !== true">
+            ■ Parar sistema
+          </button>
+        </div>
+
+        @if (systemMessage) {
+          <p class="system-message">{{ systemMessage }}</p>
+        }
+      </div>
+    </section>
+
+
     <section class="section-heading">
       <div>
         <h2>Visão geral</h2>
