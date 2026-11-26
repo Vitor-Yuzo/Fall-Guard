@@ -1,6 +1,8 @@
+
 import { Component, OnInit, inject } from '@angular/core';
 import { DatePipe, PercentPipe } from '@angular/common';
 import { FallsService, FallEvent } from './services/falls';
+import { SystemService, SystemStatus } from './services/system';
 
 @Component({
   selector: 'app-root',
@@ -11,13 +13,19 @@ import { FallsService, FallEvent } from './services/falls';
 })
 export class App implements OnInit {
   private fallsService = inject(FallsService);
+  private systemService = inject(SystemService);
 
   falls: FallEvent[] = [];
   loading = true;
   errorMessage = '';
 
+  systemStatus: SystemStatus | null = null;
+  systemLoading = false;
+  systemMessage = '';
+
   ngOnInit(): void {
     this.loadFalls();
+    this.loadSystemStatus();
   }
 
   loadFalls(): void {
@@ -33,6 +41,53 @@ export class App implements OnInit {
         console.error('Erro ao carregar eventos:', error);
         this.errorMessage = 'Não foi possível carregar os eventos.';
         this.loading = false;
+      }
+    });
+  }
+
+  loadSystemStatus(): void {
+    this.systemService.getStatus().subscribe({
+      next: (status) => {
+        this.systemStatus = status;
+      },
+      error: (error) => {
+        console.error('Erro ao consultar sistema:', error);
+      }
+    });
+  }
+
+  startSystem(): void {
+    this.systemLoading = true;
+    this.systemMessage = '';
+
+    this.systemService.startSystem().subscribe({
+      next: (response: any) => {
+        this.systemMessage = response.mensagem;
+        this.loadSystemStatus();
+        this.systemLoading = false;
+      },
+      error: (error) => {
+        this.systemMessage = error.error?.erro || 'Erro ao iniciar sistema.';
+        this.loadSystemStatus();
+        this.systemLoading = false;
+      }
+    });
+  }
+
+  stopSystem(): void {
+    this.systemLoading = true;
+    this.systemMessage = '';
+
+    this.systemService.stopSystem().subscribe({
+      next: (response: any) => {
+        this.systemMessage = response.mensagem;
+        this.loadSystemStatus();
+        this.systemLoading = false;
+      },
+      error: (error) => {
+        this.systemMessage = error.error?.erro || 'Erro ao parar sistema.';
+        this.loadSystemStatus();
+        this.systemLoading = false;
       }
     });
   }

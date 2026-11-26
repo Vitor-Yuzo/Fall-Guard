@@ -41,14 +41,18 @@ const unsigned long TEMPO_DESLIGADO = 800;
 // WI-FI
 // =====================================
 
-const char* ssid = "Yuzo";
-const char* password = "12345678";
+//const char* ssid = "Yuzo";
+//const char* password = "12345678";
+
+const char* ssid = "CLARO_A830DC";
+const char* password = "tYc9XTAYNx";
 
 // =====================================
 // MQTT
 // =====================================
 
-const char* mqtt_server = "10.212.237.57";
+//const char* mqtt_server = "10.174.234.57";
+const char* mqtt_server = "192.168.0.183";
 const int mqtt_port = 1883;
 const char* mqtt_topic = "fallguard/alertas";
 
