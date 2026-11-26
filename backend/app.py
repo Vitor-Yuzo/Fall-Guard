@@ -1,3 +1,8 @@
+import os
+import sys
+import socket
+import subprocess
+import threading
 from flask import Flask, jsonify, request
 import mysql.connector
 from config import DB_CONFIG
@@ -5,6 +10,21 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)
+
+# Gerenciamento do monitoramento
+PROJECT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+MONITOR_SCRIPT = os.path.join(
+    PROJECT_DIR,
+    "machine_learning",
+    "monitoramento.py"
+)
+
+monitor_process = None
+monitor_lock = threading.Lock()
+
+MQTT_HOST = "127.0.0.1"
+MQTT_PORT = 1883
 
 
 def get_db_connection():
@@ -113,5 +133,111 @@ def list_falls():
         if conexao is not None and conexao.is_connected():
             conexao.close()
 
+def verificar_mysql():
+    conexao = get_db_connection()
+    conexao.close()
+    return True
+
+
+def verificar_mqtt():
+    with socket.create_connection(
+        (MQTT_HOST, MQTT_PORT), timeout=2
+    ):
+        return True
+
+
+@app.route("/api/system/start", methods=["POST"])
+def start_system():
+    global monitor_process
+
+    with monitor_lock:
+        try:
+            verificar_mysql()
+            verificar_mqtt()
+
+            if monitor_process is not None and monitor_process.poll() is None:
+                return jsonify({
+                    "mensagem": "Monitoramento já está ativo"
+                }), 200
+
+            monitor_process = subprocess.Popen(
+                [sys.executable, MONITOR_SCRIPT],
+                cwd=PROJECT_DIR
+            )
+
+            return jsonify({
+                "mensagem": "Monitoramento iniciado",
+                "pid": monitor_process.pid
+            }), 200
+
+        except Exception as erro:
+            app.logger.exception("Erro ao iniciar FallGuard")
+            return jsonify({
+                "erro": str(erro)
+            }), 500
+
+
+@app.route("/api/system/stop", methods=["POST"])
+def stop_system():
+    global monitor_process
+
+    with monitor_lock:
+        if monitor_process is None or monitor_process.poll() is not None:
+            monitor_process = None
+            return jsonify({
+                "mensagem": "Monitoramento já está parado"
+            }), 200
+
+        monitor_process.terminate()
+
+        try:
+            monitor_process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            monitor_process.kill()
+            monitor_process.wait()
+
+        monitor_process = None
+
+        return jsonify({
+            "mensagem": "Monitoramento encerrado"
+        }), 200
+
+
+@app.route("/api/system/status", methods=["GET"])
+def system_status():
+    global monitor_process
+
+    mysql_status = False
+    mqtt_status = False
+
+    try:
+        verificar_mysql()
+        mysql_status = True
+    except Exception:
+        pass
+
+    try:
+        verificar_mqtt()
+        mqtt_status = True
+    except Exception:
+        pass
+
+    camera_status = (
+        monitor_process is not None
+        and monitor_process.poll() is None
+    )
+
+    return jsonify({
+        "mysql": mysql_status,
+        "mqtt": mqtt_status,
+        "camera_yolo": camera_status,
+        "sistema_ativo": camera_status
+    }), 200
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(
+    host="0.0.0.0",
+    port=5000,
+    debug=True,
+    use_reloader=False
+)

@@ -1,5 +1,6 @@
 import cv2
 import time
+import paho.mqtt.client as mqtt
 import requests
 from collections import deque
 from ultralytics import YOLO
@@ -8,6 +9,12 @@ from ultralytics import YOLO
 # =========================
 # CONFIGURAÇÕES
 # =========================
+
+MQTT_BROKER = "127.0.0.1"
+MQTT_PORT = 1883
+MQTT_TOPIC = "fallguard/alertas"
+
+NORMAL_CONFIRMATION_SECONDS = 3.0
 
 MODEL_PATH = "runs/detect/runs/fallguard_v1-6/weights/best.pt"
 
@@ -31,6 +38,27 @@ state_history = deque(maxlen=HISTORY_SIZE)
 
 last_fall_time = 0
 last_state = None
+alert_active = False
+stand_since = None
+
+# =========================
+# CONEXAO MQTT
+# =========================
+
+mqtt_client = mqtt.Client(client_id="FallGuard_YOLO")
+
+mqtt_client.connect(MQTT_BROKER, MQTT_PORT, 60)
+mqtt_client.loop_start()
+
+
+def publish_mqtt(message):
+
+    result = mqtt_client.publish(MQTT_TOPIC, message)
+
+    if result.rc == mqtt.MQTT_ERR_SUCCESS:
+        print(f"MQTT enviado: {message}")
+    else:
+        print(f"Erro ao publicar MQTT: {message}")
 
 
 # =========================
@@ -217,7 +245,6 @@ while True:
                 f"Estado alterado: {detected_state}"
             )
 
-
     # =========================
     # ANALISA QUEDA
     # =========================
@@ -229,18 +256,49 @@ while True:
         current_time = time.time()
 
         if (
-            current_time - last_fall_time
-            > COOLDOWN_SECONDS
+            not alert_active
+            and current_time - last_fall_time > COOLDOWN_SECONDS
         ):
 
             if detect_fall():
+
                 fall_detected = True
+                alert_active = True
                 last_fall_time = current_time
 
-                print("🚨 QUEDA DETECTADA!")
+                print("QUEDA DETECTADA!")
+
+                publish_mqtt("QUEDA_DETECTADA")
 
                 if detected_confidence is not None:
                     send_fall_to_api(detected_confidence)
+
+
+    # =========================
+    # CONFIRMACAO DE NORMALIDADE
+    # =========================
+
+    if alert_active:
+
+        if detected_state == "stand":
+
+            if stand_since is None:
+                stand_since = time.time()
+                print("Confirmando postura normal...")
+
+            elif time.time() - stand_since >= NORMAL_CONFIRMATION_SECONDS:
+
+                publish_mqtt("NORMAL")
+
+                alert_active = False
+                stand_since = None
+
+                print("Estado NORMAL confirmado por 3 segundos.")
+
+        else:
+
+            # Reinicia a contagem se sair de stand
+            stand_since = None
 
     # =========================
     # INTERFACE
